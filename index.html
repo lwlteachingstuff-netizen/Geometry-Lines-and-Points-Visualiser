@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Diagram Visualiser — Created by LWL</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-city">
+
+<div id="appContainer">
+
+    <!-- TOP HEADER BAR -->
+    <header class="app-header">
+        <div class="brand-section">
+            <span class="brand-logo">📐</span>
+            <div class="brand-text-wrap">
+                <h1 class="brand-title">Geometry Diagram Visualiser <span class="title-byline">— Created by LWL</span></h1>
+                <span class="brand-subtitle">Interactive 5-Step Geometry Line Focus & Closed Shape Coloring Tool</span>
+            </div>
+            <span class="lwl-badge">Created by LWL</span>
+        </div>
+
+        <!-- ANIMAL THEME SELECTOR, AI KEY & ZOOM TOOLBAR -->
+        <div class="header-controls">
+            <div class="theme-Quick-group">
+                <span class="control-label">🐾 Theme & Background:</span>
+                <button class="btn-theme-pill active" data-theme-pick="city" title="City Theme with Cats & Dogs">🏙️ City (Cats & Dogs)</button>
+                <button class="btn-theme-pill" data-theme-pick="underwater" title="Underwater Ocean Theme">🌊 Underwater</button>
+                <button class="btn-theme-pill" data-theme-pick="sky" title="Sky & Clouds Theme">☁️ Sky</button>
+                <button class="btn-theme-pill" data-theme-pick="forest" title="Woodland Forest Theme">🌿 Forest</button>
+                <select id="themeSelect" class="theme-select-dropdown" aria-label="Select Animal Theme"></select>
+            </div>
+
+            <div class="zoom-toolbar">
+                <button class="btn btn-sm btn-ai-key-header" id="btnOpenAIKeyModal" title="Enter or Update AI Vision API Key">
+                    🔑 <span id="headerAiKeyStatusText">Enter AI API Key</span>
+                </button>
+                <button class="btn btn-icon" id="btnZoomOut" title="Zoom Out (🔍-)">🔍−</button>
+                <input type="range" id="zoomSlider" min="35" max="350" value="100" step="5" title="Zoom Level">
+                <span id="zoomPctLabel" class="zoom-pct-badge">100%</span>
+                <button class="btn btn-icon" id="btnZoomIn" title="Zoom In (🔍+)">🔍+</button>
+                <button class="btn btn-sm" id="btnResetZoom" title="Reset Zoom to 100%">🎯 Fit</button>
+                <button class="btn btn-sm" id="btnTogglePan" title="Toggle Hand Pan Tool (or hold Shift/Space + Drag)">✋ Pan</button>
+                <button class="btn btn-sm btn-success-Save" id="btnHeaderSaveDiagram" title="Save Current Diagram (Up to 15 Diagrams, Auto-Deletes After 24h)">💾 Save Diagram</button>
+                <button class="btn btn-sm btn-danger" id="btnBlankSlate" title="Return to Blank Slate">🧹 Blank Slate</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 5-STEP WORKFLOW NAVIGATION BAR -->
+    <nav class="step-wizard-bar">
+        <div class="step-tabs-container">
+            <button class="step-tab-btn active" data-step="1">
+                <span class="step-num">1</span>
+                <span class="step-label">Insert Diagram</span>
+            </button>
+            <span class="step-arrow">➔</span>
+            <button class="step-tab-btn" data-step="2">
+                <span class="step-num">2</span>
+                <span class="step-label">Ignore Question</span>
+            </button>
+            <span class="step-arrow">➔</span>
+            <button class="step-tab-btn" data-step="3">
+                <span class="step-num">3</span>
+                <span class="step-label">Auto-Created Lines, Points & Values</span>
+            </button>
+            <span class="step-arrow">➔</span>
+            <button class="step-tab-btn" data-step="4">
+                <span class="step-num">4</span>
+                <span class="step-label">Highlight Lines (Different Color)</span>
+            </button>
+            <span class="step-arrow">➔</span>
+            <button class="step-tab-btn" data-step="5">
+                <span class="step-num">5</span>
+                <span class="step-label">Color Closed Shape</span>
+            </button>
+        </div>
+
+        <div class="step-nav-actions">
+            <button class="btn btn-sm" id="btnPrevStep">◀ Prev Step</button>
+            <button class="btn btn-sm btn-primary" id="btnNextStep">Next Step ▶</button>
+        </div>
+    </nav>
+
+    <!-- LEFT SIDEBAR: AI API KEY AT TOP + STEP CONTROLS + BACKGROUND SETTINGS -->
+    <aside class="left-sidebar">
+        <!-- TOP AI VISION API KEY CARD (Pinned at the Very Top of Sidebar!) -->
+        <div class="ai-vision-box ai-top-priority-box" id="topAiVisionBox">
+            <div class="ai-vision-header">
+                <span>🔑 1st: Input AI Vision API Key</span>
+                <span class="ai-status-pill" id="aiEngineStatusBadge">Key Needed</span>
+            </div>
+            <p class="ai-vision-sub">
+                Please input your <strong>Gemini</strong> or <strong>OpenAI</strong> API key below so the AI can automatically identify all clickable lines, points &amp; values:
+            </p>
+            <div class="ai-Config-row">
+                <select id="aiProviderSelect" class="ai-input-sm" title="Select AI Vision Provider">
+                    <option value="gemini">Gemini Vision (Auto)</option>
+                    <option value="openai">OpenAI (GPT-4o)</option>
+                </select>
+                <div class="api-key-input-wrap">
+                    <input type="password" id="aiApiKeyInput" class="ai-input-sm" placeholder="Paste AI API Key here...">
+                    <button type="button" class="btn-eye-toggle" id="btnToggleKeyVisibility" title="Show / Hide API Key">👁️</button>
+                </div>
+            </div>
+            <div class="ai-top-btn-row">
+                <button class="btn btn-xs btn-success-Save" id="btnSaveAiKeyTop" title="Save API Key">💾 Save Key</button>
+                <button class="btn btn-xs btn-primary" id="btnRunAIVision" title="Run AI Vision on Current Diagram">
+                    🤖 Run AI Vision Now
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 1 PANEL -->
+        <div class="step-control-card" data-step-panel="1">
+            <div class="panel-header">
+                <span class="panel-step-tag">STEP 1</span>
+                <h3>Insert Geometry Problem Diagram</h3>
+            </div>
+            <p class="panel-desc">Start from the blank slate and take a photo with your camera, upload/paste an image, or pick a PDF diagram:</p>
+
+            <div class="upload-section" style="margin-bottom: 10px;">
+                <input type="file" id="diagramFileInput" accept="image/*" style="display:none;">
+                <input type="file" id="cameraCaptureInput" accept="image/*" capture="environment" style="display:none;">
+                <div class="step1-capture-grid">
+                    <button class="btn btn-full btn-primary" id="btnOpenCameraStep1">
+                        📷 Take Photo with Camera
+                    </button>
+                    <button class="btn btn-full btn-outline" id="btnUploadDiagram">
+                        📁 Upload Image File (or Ctrl+V Paste)
+                    </button>
+                </div>
+            </div>
+
+            <div class="preset-buttons-stack">
+                <button class="preset-card-btn" data-load-preset="pdf_both_diagrams">
+                    <span class="preset-icon">📄</span>
+                    <div class="preset-info">
+                        <strong>Both PDF Diagrams (Side-by-Side)</strong>
+                        <span>Circle & Tangents + Sector OAB (Full PDF Page)</span>
+                    </div>
+                </button>
+
+                <button class="preset-card-btn" data-load-preset="pdf_circle_tangents">
+                    <span class="preset-icon">⭕</span>
+                    <div class="preset-info">
+                        <strong>PDF Diagram 1: Circle & Tangents</strong>
+                        <span>Points P, Q, R, A, B, O, C • r = 6 cm • 1 rad</span>
+                    </div>
+                </button>
+
+                <button class="preset-card-btn" data-load-preset="pdf_sector_oab">
+                    <span class="preset-icon">📐</span>
+                    <div class="preset-info">
+                        <strong>PDF Diagram 2: Sector OAB</strong>
+                        <span>Points O, P, B, A • 0.8 rad • OP = 15 cm</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2 PANEL -->
+        <div class="step-control-card" data-step-panel="2" style="display:none;">
+            <div class="panel-header">
+                <span class="panel-step-tag">STEP 2</span>
+                <h3>Ignore the Question</h3>
+            </div>
+            <p class="panel-desc">The website automatically removes the question text and isolates only the geometry diagram. You are not required to solve the question!</p>
+            <div class="step-tip-box">
+                ✅ <strong>Question Ignored Automatically:</strong> Only the geometry figure is kept so the website can extract clickable lines, points, and values in Step 3.
+            </div>
+            <div class="panel-action-stack">
+                <button class="btn btn-full btn-primary" id="btnStep2Proceed">✨ Proceed to Step 3 (Auto-Create Lines & Points) ➔</button>
+            </div>
+        </div>
+
+        <!-- STEP 3 PANEL (WEBSITE CREATES CLICKABLE LINES, POINTS & VALUES; USER ONLY HIGHLIGHTS) -->
+        <div class="step-control-card" data-step-panel="3" style="display:none;">
+            <div class="panel-header">
+                <span class="panel-step-tag">STEP 3</span>
+                <h3>Website-Created Clickable Lines, Points & Values</h3>
+            </div>
+            <p class="panel-desc">
+                The website has automatically created all clickable <strong>lines</strong>, <strong>points</strong>, and <strong>stated values</strong> from the diagram! Click any item on the diagram to highlight it, or proceed to Step 4:
+            </p>
+
+            <div id="step3AutoSummary" class="auto-created-summary"></div>
+
+            <div class="slider-group" style="margin-top:10px;">
+                <div class="slider-header">
+                    <span>Original Image Overlay:</span>
+                    <strong id="bgOpacityValue">0%</strong>
+                </div>
+                <input type="range" id="bgOpacitySlider" min="0" max="100" value="0" step="5">
+            </div>
+
+            <div class="panel-action-stack" style="margin-top:10px;">
+                <button class="btn btn-full btn-primary" id="btnStep3Proceed">🎨 Proceed to Step 4 (Highlight in Different Colors) ➔</button>
+            </div>
+        </div>
+
+        <!-- STEP 4 PANEL -->
+        <div class="step-control-card" data-step-panel="4" style="display:none;">
+            <div class="panel-header">
+                <span class="panel-step-tag">STEP 4</span>
+                <h3>Click to Highlight in a Different Color</h3>
+            </div>
+            <p class="panel-desc">
+                • <strong>Click any line, arc, point, or value</strong> on the diagram to highlight it in your chosen color.<br>
+                • <strong>Click a highlighted item again</strong> to delete it from focus!
+            </p>
+
+            <div class="color-palette-section">
+                <label class="palette-label">Select Highlight Color:</label>
+                <div class="swatch-grid">
+                    <button class="color-swatch active" data-line-color="#2563eb" style="background:#2563eb;" title="Electric Blue (PDF Style)"></button>
+                    <button class="color-swatch" data-line-color="#ef4444" style="background:#ef4444;" title="Crimson Red"></button>
+                    <button class="color-swatch" data-line-color="#10b981" style="background:#10b981;" title="Emerald Green"></button>
+                    <button class="color-swatch" data-line-color="#f59e0b" style="background:#f59e0b;" title="Amber Orange"></button>
+                    <button class="color-swatch" data-line-color="#9333ea" style="background:#9333ea;" title="Royal Purple"></button>
+                    <button class="color-swatch" data-line-color="#ec4899" style="background:#ec4899;" title="Vibrant Pink"></button>
+                    <button class="color-swatch" data-line-color="#06b6d4" style="background:#06b6d4;" title="Ocean Cyan"></button>
+                    <input type="color" id="customLineColorPicker" value="#2563eb" title="Custom Highlight Color">
+                </div>
+            </div>
+
+            <div class="panel-action-stack">
+                <button class="btn btn-full btn-primary" id="btnDemoStep4">⚡ Highlight PDF Example Lines</button>
+                <button class="btn btn-full btn-outline" id="btnClearFocusLines">🧹 Clear All Highlights</button>
+            </div>
+        </div>
+
+        <!-- STEP 5 PANEL -->
+        <div class="step-control-card" data-step-panel="5" style="display:none;">
+            <div class="panel-header">
+                <span class="panel-step-tag">STEP 5</span>
+                <h3>Color Closed Shape</h3>
+            </div>
+            <p class="panel-desc">
+                If your highlighted lines in Step 4 form a <strong>closed shape</strong>, click inside the shape on the diagram (or click the button below) to color it!
+            </p>
+
+            <div class="color-palette-section">
+                <label class="palette-label">Select Shape Fill Color:</label>
+                <div class="swatch-grid">
+                    <button class="color-swatch active" data-fill-color="#ef4444" style="background:#ef4444;" title="Red Shading (PDF Circle Example)"></button>
+                    <button class="color-swatch" data-fill-color="#2563eb" style="background:#2563eb;" title="Blue Shading (PDF Sector Example)"></button>
+                    <button class="color-swatch" data-fill-color="#10b981" style="background:#10b981;" title="Emerald Green"></button>
+                    <button class="color-swatch" data-fill-color="#f59e0b" style="background:#f59e0b;" title="Golden Amber"></button>
+                    <button class="color-swatch" data-fill-color="#9333ea" style="background:#9333ea;" title="Royal Purple"></button>
+                    <button class="color-swatch" data-fill-color="#ec4899" style="background:#ec4899;" title="Rose Pink"></button>
+                    <button class="color-swatch" data-fill-color="#06b6d4" style="background:#06b6d4;" title="Sky Cyan"></button>
+                    <input type="color" id="customFillColorPicker" value="#ef4444" title="Custom Fill Color">
+                </div>
+            </div>
+
+            <div class="fill-style-section">
+                <label class="palette-label">Shading Style:</label>
+                <div class="style-toggle-row">
+                    <button class="btn-style-opt active" data-fill-style="hatch_solid">✏️ Hatch + Fill (PDF)</button>
+                    <button class="btn-style-opt" data-fill-style="hatch">📏 Hatch Only</button>
+                    <button class="btn-style-opt" data-fill-style="solid">🎨 Solid Fill</button>
+                </div>
+            </div>
+
+            <div class="panel-action-stack">
+                <button class="btn btn-full btn-primary" id="btnAutoColorClosed">🎨 Color Detected Closed Shape</button>
+                <button class="btn btn-full btn-outline" id="btnClearShapeFills">🧹 Clear All Colored Shapes</button>
+            </div>
+        </div>
+
+        <!-- BACKGROUND & CANVAS APPEARANCE CARD -->
+        <div class="quick-switch-card background-customizer-card">
+            <div class="quick-card-title">🎨 Change Backgrounds Accordingly</div>
+            <div class="bg-control-group">
+                <label class="bg-sub-label">1. World / Stage Backdrop:</label>
+                <div class="bg-row-flex">
+                    <select id="stageBackdropSelect" class="ai-input-sm">
+                        <option value="theme_scenic">✨ Match Animal Theme Scenery</option>
+                        <option value="midnight">🌙 Midnight Dark Studio</option>
+                        <option value="daylight">☀️ Bright Daylight Studio</option>
+                        <option value="custom_color">🎨 Custom Backdrop Color</option>
+                        <option value="custom_image">🖼️ Custom Wallpaper Image</option>
+                    </select>
+                    <input type="color" id="customBackdropColorPicker" value="#1e293b" title="Pick Custom World Backdrop Color">
+                </div>
+                <input type="file" id="customWallpaperInput" accept="image/*" style="display:none;">
+                <button class="btn btn-xs btn-outline" id="btnUploadWallpaper" style="width:100%; margin-top:4px;">
+                    🖼️ Upload Custom Background Image
+                </button>
+            </div>
+
+            <div class="bg-control-group" style="margin-top:8px;">
+                <label class="bg-sub-label">2. Diagram Canvas Paper Background:</label>
+                <div class="bg-row-flex">
+                    <select id="canvasPaperBgSelect" class="ai-input-sm">
+                        <option value="theme_matched">✨ Match Animal Theme Tint</option>
+                        <option value="white_grid">📐 Classic White Grid</option>
+                        <option value="plain_white">⬜ Pure Blank White</option>
+                        <option value="warm_paper">📜 Warm Notebook Paper</option>
+                        <option value="chalkboard">🟩 Classroom Chalkboard</option>
+                        <option value="blueprint">🟦 Engineering Blueprint</option>
+                        <option value="custom_color">🎨 Custom Canvas Color</option>
+                    </select>
+                    <input type="color" id="customCanvasPaperColorPicker" value="#ffffff" title="Pick Custom Diagram Canvas Color">
+                </div>
+            </div>
+        </div>
+
+        <!-- QUICK SWITCH DIAGRAM CARD -->
+        <div class="quick-switch-card">
+            <div class="quick-card-title">🔄 Switch Diagram / Blank Slate</div>
+            <div class="quick-btn-row">
+                <button class="btn btn-xs" data-load-preset="pdf_both_diagrams">Both (PDF)</button>
+                <button class="btn btn-xs" data-load-preset="pdf_circle_tangents">Circle (#1)</button>
+                <button class="btn btn-xs" data-load-preset="pdf_sector_oab">Sector (#2)</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- CENTER MAIN WORKSPACE CANVAS + ANIMATED ANIMAL WORLD -->
+    <main class="workspace-stage">
+        <div id="themeBackdropSprites" class="theme-backdrop-sprites" aria-hidden="true"></div>
+
+        <div class="workspace-top-bar">
+            <div id="stepInstructionBanner" class="step-instruction-banner">
+                <strong>Blank Slate</strong> — Insert a geometry problem diagram in Step 1 to begin.
+            </div>
+            <span id="activeThemeBadge" class="theme-pill-badge">🐾 Cats & Dogs City</span>
+        </div>
+
+        <div class="canvas-viewport" id="canvasViewport">
+            <canvas id="geometryCanvas"></canvas>
+
+            <!-- INITIAL BLANK SLATE OVERLAY (Shown first before inserting any image!) -->
+            <div id="blankSlateOverlay" class="blank-slate-overlay">
+                <div class="blank-slate-card">
+                    <div class="blank-slate-badge">✨ BLANK SLATE — STEP 1</div>
+                    <h2>Welcome to Geometry Diagram Visualiser</h2>
+                    <p class="blank-slate-byline">Created by LWL</p>
+                    <p class="blank-slate-desc">
+                        The canvas starts on a clean <strong>blank slate</strong>. Insert a geometry problem diagram below — the website will automatically ignore the question (Step 2) and automatically create all clickable lines, points, and values (Step 3) for you to highlight!
+                    </p>
+
+                    <div class="blank-slate-grid">
+                        <button class="blank-choice-card" data-load-preset="pdf_both_diagrams">
+                            <span class="choice-emoji">📄</span>
+                            <strong>Insert Both PDF Diagrams</strong>
+                            <small>Circle & Tangents + Sector OAB side-by-side (Matches PDF Pages 1–3)</small>
+                        </button>
+
+                        <button class="blank-choice-card" data-load-preset="pdf_circle_tangents">
+                            <span class="choice-emoji">⭕</span>
+                            <strong>Insert PDF Diagram 1</strong>
+                            <small>Circle & Tangents (P, Q, R, A, B, O, C • r = 6 cm • 1 rad)</small>
+                        </button>
+
+                        <button class="blank-choice-card" data-load-preset="pdf_sector_oab">
+                            <span class="choice-emoji">📐</span>
+                            <strong>Insert PDF Diagram 2</strong>
+                            <small>Sector OAB (Angle 0.8 rad • OP = 15 cm • AP ⊥ OB)</small>
+                        </button>
+                    </div>
+
+                    <!-- INLINE AI KEY PROMPT RIGHT ON THE BLANK SLATE -->
+                    <div class="blank-slate-ai-prompt">
+                        <div class="blank-ai-title">
+                            <span>🔑 Step 0: Input Your AI Vision API Key (Recommended for Custom Photos/Images)</span>
+                        </div>
+                        <div class="blank-ai-input-row">
+                            <select id="blankAiProviderSelect" class="ai-input-sm">
+                                <option value="gemini">Google Gemini Vision (Auto)</option>
+                                <option value="openai">OpenAI Vision (GPT-4o)</option>
+                            </select>
+                            <input type="password" id="blankAiApiKeyInput" class="ai-input-sm" placeholder="Enter your Gemini or OpenAI API Key here...">
+                            <button class="btn btn-sm btn-primary" id="btnBlankSaveAiKey">💾 Save Key</button>
+                        </div>
+                    </div>
+
+                    <div class="blank-slate-actions">
+                        <button class="btn btn-primary" id="btnBlankSlateCamera">📷 Take Photo with Camera (Step 1)</button>
+                        <button class="btn btn-outline-bright" id="btnBlankSlateUpload">📁 Upload / Paste Geometry Problem Image</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="toastContainer" class="toast-container"></div>
+        </div>
+
+        <div class="animal-habitat-bar">
+            <div class="habitat-label">🐾 Theme Animals:</div>
+            <div id="animalHabitatStrip" class="animal-habitat-strip"></div>
+        </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR: SAVED DIAGRAMS (MAX 15, 24H EXPIRY), ANIMAL COMPANIONS & FOCUS / CLOSED SHAPE INSPECTOR -->
+    <aside class="right-sidebar">
+        <section class="sidebar-box saved-diagrams-box">
+            <div class="box-title-row">
+                <h3>📂 Saved Diagrams (24h Expiry)</h3>
+                <span id="savedDiagramsCountBadge" class="count-pill">0 / 15</span>
+            </div>
+            <div class="saved-diagrams-toolbar">
+                <button class="btn btn-xs btn-primary" id="btnSaveCurrentDiagram" style="flex:1;">
+                    💾 Save Current Diagram
+                </button>
+                <button class="btn btn-xs btn-outline" id="btnClearSavedDiagrams" title="Delete All Saved Diagrams">
+                    🗑️ Clear
+                </button>
+            </div>
+            <small class="saved-expiry-note">⏳ Up to 15 diagrams saved locally • Automatically deleted 24 hours after saving.</small>
+            <div id="savedDiagramsList" class="inspector-scroll-list saved-diagrams-scroll"></div>
+        </section>
+
+        <section class="sidebar-box">
+            <div class="box-title-row">
+                <h3>🐾 Theme Animal Companions</h3>
+            </div>
+            <div id="animalCompanionPanel"></div>
+        </section>
+
+        <section class="sidebar-box">
+            <div class="box-title-row">
+                <h3>🎯 Highlighted Items in Focus</h3>
+                <span id="focusCountBadge" class="count-pill">0</span>
+            </div>
+            <div id="focusedLinesList" class="inspector-scroll-list"></div>
+        </section>
+
+        <section class="sidebar-box">
+            <div class="box-title-row">
+                <h3>🎨 Closed Shapes (Step 5)</h3>
+                <span id="closedCountBadge" class="count-pill">0</span>
+            </div>
+            <div id="closedShapesList" class="inspector-scroll-list"></div>
+        </section>
+    </aside>
+
+    <!-- FOOTER BAR -->
+    <footer class="app-footer">
+        <div>
+            <span>Geometry Diagram Visualiser • <strong>Created by LWL</strong></span>
+        </div>
+        <div>
+            <span>Note: Website creates all clickable lines, points & values — you only highlight them & color closed shapes!</span>
+        </div>
+    </footer>
+
+</div>
+
+<!-- LIVE CAMERA CAPTURE MODAL (FOR STEP 1) -->
+<div id="cameraModal" class="app-modal-overlay" style="display:none;">
+    <div class="app-modal-card camera-modal-card">
+        <div class="app-modal-header">
+            <h3>📷 Step 1: Take Photo of Geometry Problem Diagram</h3>
+            <button class="btn-modal-close" id="btnCloseCameraModal" title="Close Camera">✖</button>
+        </div>
+        <p class="app-modal-sub">
+            Point your camera at any geometry problem diagram on paper or screen. The website will automatically ignore the question text (Step 2) and extract clickable lines, points &amp; values (Step 3)!
+        </p>
+        <div class="camera-viewport-box">
+            <video id="cameraVideoPreview" autoplay playsinline muted></video>
+            <div class="camera-viewfinder-frame">
+                <span>Align Geometry Diagram Here</span>
+            </div>
+            <div id="cameraStatusMessage" class="camera-status-msg" style="display:none;"></div>
+        </div>
+        <div class="camera-modal-actions">
+            <button class="btn btn-primary btn-lg-snap" id="btnSnapCameraPhoto">📸 Snap Photo &amp; Extract Diagram</button>
+            <button class="btn btn-outline" id="btnFlipCamera" title="Switch Front / Rear Camera">🔄 Switch Camera</button>
+            <button class="btn btn-outline" id="btnDeviceCameraFallback" title="Use Native Device Camera / Photo Picker">📱 Device Camera / File</button>
+            <button class="btn btn-danger" id="btnCancelCameraModal">✖ Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- AI API KEY PROMPT MODAL (Asks the user to input their AI API Key) -->
+<div id="aiKeyPromptModal" class="app-modal-overlay" style="display:none;">
+    <div class="app-modal-card ai-key-modal-card">
+        <div class="app-modal-header">
+            <h3>🔑 Input Your AI Vision API Key</h3>
+            <button class="btn-modal-close" id="btnCloseAiKeyModal" title="Close">✖</button>
+        </div>
+        <p class="app-modal-sub">
+            To let the AI accurately recognize every vertex, line segment, circular arc, and angle/length value from your uploaded or camera-captured geometry diagrams, please input your <strong>Google Gemini</strong> or <strong>OpenAI</strong> API Key below:
+        </p>
+        <div class="modal-form-stack">
+            <label class="modal-field-label">Select AI Vision Provider:</label>
+            <select id="modalAiProviderSelect" class="ai-input-sm modal-input-lg">
+                <option value="gemini">Google Gemini Vision (Auto-Discovers Best Model)</option>
+                <option value="openai">OpenAI Vision (GPT-4o / GPT-4o-mini)</option>
+            </select>
+
+            <label class="modal-field-label" style="margin-top:10px;">Enter AI API Key:</label>
+            <div class="api-key-input-wrap">
+                <input type="password" id="modalAiApiKeyInput" class="ai-input-sm modal-input-lg" placeholder="Paste your API key (e.g. AIzaSy... or sk-...)">
+                <button type="button" class="btn-eye-toggle" id="btnModalToggleKeyVisibility" title="Show / Hide API Key">👁️</button>
+            </div>
+            <small class="modal-hint-text">
+                🔒 Your API key is stored locally in your browser only and sent directly to Gemini/OpenAI when analyzing a diagram.
+            </small>
+        </div>
+        <div class="camera-modal-actions" style="margin-top:16px;">
+            <button class="btn btn-primary" id="btnSaveModalAiKey">✅ Save AI API Key &amp; Continue</button>
+            <button class="btn btn-outline" id="btnSkipModalAiKey">Skip for Now (Use Built-in CV)</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/themes.js"></script>
+<script src="js/presets.js"></script>
+<script src="js/imageAnalyzer.js"></script>
+<script src="js/aiVision.js"></script>
+<script src="js/geometryEngine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
